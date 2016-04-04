@@ -12,7 +12,14 @@
 extern "C" {
 #endif
     
-    //CHECK THESE
+    #define DATASET "solo"
+    #define WORK_PATH "/home/victor/Documents/mestrado/GeneralTestBed"
+    #define LIST_PATH WORK_PATH "/datasets/" DATASET "/" DATASET ".txt"
+    #define REF_PATH WORK_PATH "/VQ/refDir/" DATASET
+    #define FEATURE "LPCC"
+    #define VQ_MAKE_CONFIG_PATH WORK_PATH "/HTK/cfg/" FEATURE "_QUANT.cfg"
+    
+    //HECK THESE
     //const char* OCTAVE_PATH = "/home/victor/Dropbox/ssh";
     #define ROOT_DIR "/home/victor/Documents/Mestrado/Projeto/datasets/LapsBM1.4"
     #define CORPUS_NAME "Laps-LPCC"
@@ -23,7 +30,7 @@ extern "C" {
     
     
     #define MFC_MAKE_CONFIG_PATH "/home/victor/Dropbox/Projeto2016/ssh/cfg/config0"
-    const char* VQ_MAKE_CONFIG_PATH = "/home/victor/Dropbox/Projeto2016/ssh/cfg/vqMakeConfig";
+    
     const int step = 1;
     
     

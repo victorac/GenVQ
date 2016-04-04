@@ -179,11 +179,11 @@ int runHQuant(){
     
     fclose(listFile);
     
-    parseVqTablev2();
+    parseVqTable();
     
 }
 
-int parseVqTablev2(){
+int parseVqTable(){
     
     FILE* vqfile;
     
