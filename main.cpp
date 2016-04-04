@@ -152,44 +152,32 @@ int runHCopy(){
     parseMFCC2v2(command);
 }
 
-int runHQuantv2(char* scriptFileName){
+int runHQuant(){
     
-    char command[300],buffer[200];
-    char* aux;
+    char buffer[60], command[300];
     char trainFile[100], vqTableFile[100];
-    FILE* scriptFile;
-    int index;
-    char number[2];
-    char prefix[4]; 
+    FILE* listFile;
     
-    scriptFile = fopen(scriptFileName, "r");
-    if(scriptFile==NULL){
-        perror("Não conseguiu abrir o arquivo de script temporario");
+    listFile = fopen(LIST_PATH, "r");
+    if(listFile==NULL){
+        perror("Não conseguiu abrir o arquivo de lista");
         return -8;
     }
-    index=0;
     
-    sprintf(command, "mkdir %s/cb", LIST_DIR);
+    sprintf(command, "mkdir %s/cb", REF_PATH);
     system(command);
     
-    while(fgets(buffer,sizeof(buffer), scriptFile)!=NULL){
-        index++;
-        aux=strrchr(buffer, ' ');
-        strcpy(trainFile, aux+1);
-        trainFile[strlen(trainFile)-1]=0;
-        aux=strrchr(trainFile, '/');
-        sprintf(vqTableFile, "%s/cb%s", LIST_DIR, aux);
-        int len = strlen(vqTableFile);
-        vqTableFile[len-4]=0;
-        strcat(vqTableFile, "_cb");
-        //printf("Name: %s\n", vqTableFile);
+    while(fgets(buffer,sizeof(buffer), listFile)!=NULL){
+        buffer[strlen(buffer)-1]=0;
+        sprintf(trainFile, "%s/datasets/%s/%s/%s.prm", WORK_PATH,DATASET,FEATURE,
+                buffer,);
+        sprintf(vqTableFile, "%s/cb/%s_cb", REF_PATH,buffer);
         sprintf(command,"HQuant -C %s -n 1 20 %s %s ",VQ_MAKE_CONFIG_PATH, vqTableFile, trainFile);
-        printf("Command: %s\n", command);
-        int j=system(command);
-        printf("%d\n",j);
+        //printf("Command: %s\n", command);
+        system(command);
     }
     
-    fclose(scriptFile);
+    fclose(listFile);
     
     parseVqTablev2();
     
