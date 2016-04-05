@@ -185,70 +185,62 @@ int runHQuant(){
 
 int parseVqTable(){
     
+    FILE* listFile;
     FILE* vqfile;
-    
-    int order=0;
-    char filePath[200];
-    char line[1000];
-    FILE* vqcsv;
-    
-    char* cluster;
+    FILE* vqcsv;   
     char csvLine[1000];
-    DIR* vqDir;
-    struct dirent* ent;
-    int len;
     char command[100];
-
-    vqDir = opendir(VQ_DIR);
-    if(vqDir == NULL){
-        perror("Nao conseguiu abrir o diretorio de VQ");
-        return -5;
+    char buffer[100];
+    char fileName[100];
+    char line[1000];
+    char* token;
+    int len;
+    
+    listFile = fopen(LIST_PATH,"r");
+    if(listFile == NULL){
+        perror("Nao conseguiu abrir o arquivo de lista");
+        return -1;
     }
-    sprintf(command, "mkdir %s/csv", VQ_DIR);
+    
+    sprintf(command, "mkdir %s/cb/csv", REF_PATH);
     system(command);
     
-    while((ent = readdir(vqDir)) != NULL){
-       
-        if(strlen(ent->d_name)>3){
-           
-            sprintf(filePath, "%s/%s", VQ_DIR, ent->d_name);
-            printf("File: %s\n", filePath);
-            vqfile = fopen(filePath, "r");
-            sprintf(filePath, "%s/csv/%s.csv", VQ_DIR, ent->d_name);
-            vqcsv = fopen(filePath, "w");
-            if(vqfile == NULL){
-                perror("Não conseguiu abrir a vqtable");
-                return -6;
-            }
-            if(vqcsv ==NULL){
-                perror("Não conseguiu criar o arquivo csv");
-                return -7;
-            }
-            order=0;
-            while(fgets(line,sizeof(line),vqfile)!=NULL){
-                if(order<2){order++;continue;}
-                cluster=strtok(line, " ");
-                while(cluster!=NULL){
-                    strcat(csvLine,cluster);
+    while(fgets(buffer, sizeof(buffer), listFile)!=NULL){
+        buffer[strlen(buffer)-1]=0;
+        sprintf(fileName, "%s/cb/%s_cb", REF_PATH, buffer);
+        vqfile=fopen(fileName, "r");
+        if(vqfile==NULL){
+            perror("Couldn't open the cb file");
+            return -2;
+        }
+        sprintf(fileName, "%s/cb/csv/%s.csv", REF_PATH, buffer);
+        vqcsv=fopen(fileName, "w");
+        if(vqcsv==NULL){
+            perror("Couldn't create csv file");
+            return -3;
+        }
+        while(fgets(line, sizeof(line), vqfile)){
+            if(line[0]==' '){
+                token=strtok(line, " ");
+                while(token!=NULL){
+                    strcat(csvLine,token);
                     len =strlen(csvLine); 
                     csvLine[len]=',';
                     csvLine[len+1]=0;
-                    cluster=strtok(NULL, " ");
+                    token=strtok(NULL, " ");
                 }
-                csvLine[strlen(csvLine)-1]=0;
-                //printf("Line: %s", csvLine);
+                csvLine[strlen(csvLine)-1]=0;//cuts the comma
                 fputs(csvLine, vqcsv);
                 csvLine[0]=0;
-                order=0;
             }
-            
-            fclose(vqcsv);
-            fclose(vqfile);
         }
+        fclose(vqcsv);
+        fclose(vqfile);
+                
     }
-    closedir(vqDir);
+    fclose(listFile);
 }
-
+ 
 int parseMFCCv2(char* scriptFilePath, char* mfcDir){
     FILE* scriptFile;
     char command[500];
