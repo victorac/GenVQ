@@ -13,11 +13,14 @@ extern "C" {
 #endif
     
     #define DATASET "solo"
+    #define FEATURE "LPCC"    
     #define WORK_PATH "/home/victor/Documents/mestrado/GeneralTestBed"
+    #define FEAT_PATH WORK_PATH "/datasets/" DATASET "/" FEATURE
     #define LIST_PATH WORK_PATH "/datasets/" DATASET "/" DATASET ".txt"
     #define REF_PATH WORK_PATH "/VQ/refDir/" DATASET
-    #define FEATURE "LPCC"
+    
     #define VQ_MAKE_CONFIG_PATH WORK_PATH "/HTK/cfg/" FEATURE "_QUANT.cfg"
+    #define FEAT_COUNT 12
     
     //HECK THESE
     //const char* OCTAVE_PATH = "/home/victor/Dropbox/ssh";
