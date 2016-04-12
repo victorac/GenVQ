@@ -12,9 +12,9 @@
 extern "C" {
 #endif
     
-    #define DATASET "solo"
-    #define FEATURE "LPCC"    
-    #define WORK_PATH "/home/victor/Documents/mestrado/GeneralTestBed"
+    #define DATASET "youtubeDataset"
+    #define FEATURE "PLP"    
+    #define WORK_PATH "/home/victor/Documents/Mestrado/GeneralTestBed"
     #define FEAT_PATH WORK_PATH "/datasets/" DATASET "/" FEATURE
     #define LIST_PATH WORK_PATH "/datasets/" DATASET "/" DATASET ".txt"
     #define REF_PATH WORK_PATH "/VQ/refDir/" DATASET

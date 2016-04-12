@@ -18,10 +18,9 @@
 
 using namespace std;
 
-int runHQuantv2(char* scriptFileName);
-int parseMFCCv2(char* scriptFilePath, char* mfcDir);
-int parseVqTablev2();
-int parseMFCC2v2(char* mfcDirPath);
+int runHQuant();
+int parseFeatures();
+int parseVqTable();
 /*
  STEP 1
  */
@@ -144,12 +143,8 @@ int runHCopy(){
     printf("%d\n",j);
     }
     
-    
-    
-    sprintf(command, "%s/mfc", LIST_DIR);
-    runHQuantv2(scriptPath);
-    parseMFCCv2(scriptPath, command);
-    parseMFCC2v2(command);
+    runHQuant();
+    parseFeatures();
 }
 
 int runHQuant(){
@@ -158,22 +153,23 @@ int runHQuant(){
     char trainFile[100], vqTableFile[100];
     FILE* listFile;
     
+    printf("Running HQuant\n");
     listFile = fopen(LIST_PATH, "r");
     if(listFile==NULL){
         perror("Não conseguiu abrir o arquivo de lista");
         return -8;
     }
     
-    sprintf(command, "mkdir %s/cb", REF_PATH);
+    sprintf(command, "mkdir %s/cb_%s", REF_PATH, FEATURE);
     system(command);
     
     while(fgets(buffer,sizeof(buffer), listFile)!=NULL){
         buffer[strlen(buffer)-1]=0;
-        sprintf(trainFile, "%s/datasets/%s/%s/%s.prm", WORK_PATH,DATASET,FEATURE,
-                buffer,);
-        sprintf(vqTableFile, "%s/cb/%s_cb", REF_PATH,buffer);
-        sprintf(command,"HQuant -C %s -n 1 20 %s %s ",VQ_MAKE_CONFIG_PATH, vqTableFile, trainFile);
-        //printf("Command: %s\n", command);
+        sprintf(trainFile, "%s/%s.prm", FEAT_PATH,
+                buffer);
+        sprintf(vqTableFile, "%s/cb_%s/%s_cb", REF_PATH, FEATURE, buffer);
+        sprintf(command,"HQuant -n 1 20 %s %s ", vqTableFile, trainFile);
+        printf("Command: %s\n", command);
         system(command);
     }
     
@@ -196,29 +192,31 @@ int parseVqTable(){
     char* token;
     int len;
     
+    printf("Parsing VQ table\n");
     listFile = fopen(LIST_PATH,"r");
     if(listFile == NULL){
         perror("Nao conseguiu abrir o arquivo de lista");
         return -1;
     }
     
-    sprintf(command, "mkdir %s/cb/csv", REF_PATH);
+    sprintf(command, "mkdir %s/cb_%s/csv", REF_PATH, FEATURE);
     system(command);
     
     while(fgets(buffer, sizeof(buffer), listFile)!=NULL){
         buffer[strlen(buffer)-1]=0;
-        sprintf(fileName, "%s/cb/%s_cb", REF_PATH, buffer);
+        sprintf(fileName, "%s/cb_%s/%s_cb", REF_PATH, FEATURE, buffer);
         vqfile=fopen(fileName, "r");
         if(vqfile==NULL){
             perror("Couldn't open the cb file");
             return -2;
         }
-        sprintf(fileName, "%s/cb/csv/%s.csv", REF_PATH, buffer);
+        sprintf(fileName, "%s/cb_%s/csv/%s.csv", REF_PATH, FEATURE, buffer);
         vqcsv=fopen(fileName, "w");
         if(vqcsv==NULL){
             perror("Couldn't create csv file");
             return -3;
         }
+        csvLine[0]=0;
         while(fgets(line, sizeof(line), vqfile)){
             if(line[0]==' '){
                 token=strtok(line, " ");
@@ -241,105 +239,64 @@ int parseVqTable(){
     fclose(listFile);
 }
  
-int parseMFCCv2(char* scriptFilePath, char* mfcDir){
-    FILE* scriptFile;
-    char command[500];
+int parseFeatures(){
     
-    scriptFile = fopen(scriptFilePath, "r");
-    if(scriptFile==NULL){
+    FILE* listFile;
+    FILE* textFile;
+    FILE* csvFile;
+    char command[500];
+    char buffer[60];
+    char textLine[1000], csvLine[1000];
+    char* token;
+    
+    printf("Parsing features\n");
+    listFile = fopen(LIST_PATH, "r");
+    if(listFile==NULL){
         perror("Não conseguiu abrir o arquivo de script");
         return -4;
     }
-    char buffer[200];
-    char mfccFileName[60];
-    char* aux;
-    char* mfccPath;
-    sprintf(command,"mkdir %s/text", mfcDir);
-    system(command);
-    while(fgets(buffer,sizeof(buffer), scriptFile)!=NULL){
-        mfccPath=strchr(buffer,' ')+1;
-        aux=strrchr(mfccPath,'/')+1;
-        strncpy(mfccFileName,aux,strlen(aux)-5);
-        mfccFileName[strlen(aux)-5]=0;
-        mfccPath[strlen(mfccPath)-1]=0;
-        //printf("name: %s", mfccPath);
-        sprintf(command,"HList -i 12 %s > %s/text/%s.txt", mfccPath,mfcDir,mfccFileName);
+    while(fgets(buffer, sizeof(buffer), listFile)!=NULL){
+        buffer[strlen(buffer)-1]=0;
+        sprintf(command,"HList -i %i %s/%s.prm > %s/%s.txt", FEAT_COUNT,
+                FEAT_PATH, buffer, FEAT_PATH, buffer);
         printf("Command: %s\n", command);
         system(command);
-    
+        sprintf(command,"%s/%s.txt", FEAT_PATH, buffer);
+        textFile = fopen(command, "r");
+        if(textFile==NULL){
+            perror("Couldn't open text feat file");
+            return -2;
+        }
+        sprintf(command, "%s/%s.csv", FEAT_PATH, buffer);
+        csvFile=fopen(command, "w");
+        if(csvFile==NULL){
+            perror("Couldn't create csv file");
+            return -3;
+        }
+        fgets(textLine, sizeof(textLine), textFile);//discart first line
+        while(fgets(textLine, sizeof(textLine), textFile)!=NULL){
+            if(isdigit(textLine[0])){
+                token=strtok(textLine, " ");
+                token=strtok(NULL, " ");
+                csvLine[0]=0;
+                while(token!=NULL){
+                    strcat(csvLine, token);
+                    strcat(csvLine, ",");
+                    token=strtok(NULL, " ");
+                }
+                csvLine[strlen(csvLine)-1]=0;
+                fputs(csvLine,csvFile);
+            }
+        }
+        fclose(csvFile);
+        fclose(textFile);
+        
     }
-    fclose(scriptFile);
+    fclose(listFile);
     
     
 }
 
-/*
- text to csv
- */
-int parseMFCC2v2(char* mfcDirPath){
-    DIR* mfcDir;
-    struct dirent* ent;
-    FILE* mfcFile;
-    FILE* mfcParsedFile;
-    char fParsedPath[160];
-    char fpath[160];
-    char textPath[160];
-    char fname[30];
-    char buffer[600];
-    char* aux;
-    char line[1000];
-    char command[100];
-    
-    
-    sprintf(textPath, "%s/text",mfcDirPath);
-    mfcDir = opendir(textPath);
-    if(mfcDir==NULL){
-        perror("Não conseguiu abrir o diretorio");
-        return -4;
-    }
-    sprintf(command, "mkdir %s/csv", mfcDirPath);
-    system(command);
-    
-    while((ent = readdir(mfcDir)) != NULL){
-        if(strlen(ent->d_name)>2){
-            sprintf(fpath, "%s/%s",textPath, ent->d_name);
-            mfcFile = fopen(fpath, "r");
-            if(mfcFile==NULL){
-                perror("Não conseguiu abrir o arquivo MFCC txt");
-                return -6;
-            }
-            strcpy(fname, ent->d_name);
-            strcpy((fname+strlen(fname)-4), ".csv");
-            //printf("File name: %s\n",fname);
-            sprintf(fParsedPath, "%s/csv/%s",mfcDirPath, fname);
-            mfcParsedFile = fopen(fParsedPath, "w");
-            if(mfcParsedFile==NULL){
-                perror("Não conseguiu criar arquivo csv para MFCC");
-                return -7;
-            }
-            while(fgets(buffer, sizeof(buffer), mfcFile)!=NULL){
-                if(isdigit(buffer[0])){
-                    aux=strtok(buffer, " ");
-                    aux=strtok(NULL, " ");
-                    line[0]=0;
-                    while(aux!=NULL){    
-                        strcat(line, aux);
-                        int len = strlen(line);
-                        line[len]=',';
-                        line[len+1]=0;
-                        aux=strtok(NULL, " ");
-                    }
-                    line[strlen(line)-1]=0;
-                    //printf("Line: %s",line);
-                    fputs(line,mfcParsedFile);
-                }
-            }
-            fclose(mfcFile);
-            fclose(mfcParsedFile);
-        }
-    }
-    closedir(mfcDir);
-}
 
 
 int organizer(){
@@ -410,15 +367,8 @@ int organizer(){
  */
 int main(int argc, char** argv) {
     
-    FILE* mfcFileList;
-    char** fileList = NULL;
-    char command[500];
-    int fileCount;
-    
-    readRoot();
-    runHCopy();
-    organizer();
-    //parseVqTablev2();
+    runHQuant();
+    parseFeatures();
     return 0;
 }
 
